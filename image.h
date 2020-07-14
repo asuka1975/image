@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <string>
+#include <sstream>
 #include <type_traits>
 #include <vector>
 
@@ -25,6 +27,8 @@ namespace aslib {
     public:
         using iterator = TImage*;
         using const_iterator = const TImage*;
+        using reference = TImage&;
+        using const_reference = const TImage&;
     public:
         image(std::vector<std::byte>& mem, std::uint32_t start, std::uint32_t length);
         bool empty() const noexcept;
@@ -33,6 +37,10 @@ namespace aslib {
         const_iterator begin() const noexcept;
         iterator end() noexcept;
         const_iterator end() const noexcept;
+        reference operator[](std::size_t i);
+        const_reference operator[](std::size_t i) const;
+        reference at(std::size_t i);
+        const_reference at(std::size_t i) const;
         void push_back(const TImage& obj);
         void push_back(TImage&& obj);
         void pop_back();
@@ -45,6 +53,9 @@ namespace aslib {
         iterator erase(const_iterator position);
         iterator erase(const_iterator first, const_iterator last);
 
+        image(const image<TImage>& obj) = delete;
+        image(image<TImage>&& obj) = delete;
+        image<TImage>& operator=(const image<TImage>& obj) = delete;        
         image<TImage>* operator&() = delete;
         static void* operator new(size_t size) = delete;
         static void operator delete(void *ptr) = delete;
@@ -58,6 +69,8 @@ namespace aslib {
         std::vector<std::byte>& memory;
         std::uint32_t start;
         std::uint32_t count;
+    private:
+        bool _M_range_check(std::size_t i) const;
     };
 
     template <class TImage>
@@ -99,6 +112,36 @@ namespace aslib {
     template <class TImage>
     inline typename image<TImage>::const_iterator image<TImage>::end() const noexcept {
         return reinterpret_cast<TImage*>(memory.data() + start + count * sizeof(TImage));
+    }
+
+    template <class TImage>
+    inline typename image<TImage>::reference image<TImage>::operator[](std::size_t i) {
+        return *reinterpret_cast<TImage*>(memory.data() + start + i * sizeof(TImage));
+    }
+
+    template <class TImage>
+    inline typename image<TImage>::const_reference image<TImage>::operator[](std::size_t i) const {
+        return *reinterpret_cast<TImage*>(memory.data() + start + i * sizeof(TImage));
+    }
+
+    template <class TImage>
+    inline typename image<TImage>::reference image<TImage>::at(std::size_t i) {
+        if(i >= count) {
+            std::ostringstream oss;
+            oss << "image::_M_range_check: i (which is " << i << ") >= this->size() (which is " << size() << ")";
+            throw std::out_of_range(oss.str());
+        }
+        return operator[](i);
+    }
+
+    template <class TImage>
+    inline typename image<TImage>::const_reference image<TImage>::at(std::size_t i) const {
+        if(i >= count) {
+            std::ostringstream oss;
+            oss << "image::_M_range_check: i (which is " << i << ") >= this->size() (which is " << size() << ")";
+            throw std::out_of_range(oss.str());
+        }
+        return operator[](i);
     }
 
     template <class TImage>
@@ -207,6 +250,11 @@ namespace aslib {
         memory.erase(memory.begin() + offset, memory.begin() + offset + c * n);
         count -= n;
         return begin() + d;
+    }
+
+    template <class TImage>
+    inline bool image<TImage>::_M_range_check(std::size_t i) const {
+        return i < size();
     }
 }
 
