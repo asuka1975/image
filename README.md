@@ -50,7 +50,8 @@ Template parameter's meaning is:
 ### Element access
 |name|explanation|version|
 |:--:|:--:|:--:|
-||||
+|at()|access specified element with bounds chcking||
+|operator\[\]()|access specified element||
 
 ### Modifiers
 |name|explanation|version|
@@ -65,11 +66,12 @@ Template parameter's meaning is:
 This class contains reference of an object so you must avoid life extension of it. You can find wrong life extension in compiling owing to deleting functions involved in construction of pointer.
 |name|explanation|version|
 |:--:|:--:|:--:|
+|operator=()||C++11|
 |operator&()||C++11|
 |operator new()||C++11|
 |operator delete()||C++11|
-|operator new[]()||C++11|
-|operator delete[]()||C++11|
+|operator new\[\]()||C++11|
+|operator delete\[\]()||C++11|
 
 ## Member type
 |name|explanation|version|
