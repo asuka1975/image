@@ -33,6 +33,7 @@ namespace aslib {
         image(std::vector<std::byte>& mem, std::uint32_t start, std::uint32_t length);
         bool empty() const noexcept;
         std::size_t size() const noexcept;
+        std::size_t occupation() const noexcept;
         iterator begin() noexcept;
         const_iterator begin() const noexcept;
         iterator end() noexcept;
@@ -92,6 +93,11 @@ namespace aslib {
     template <class TImage>
     inline std::size_t image<TImage>::size() const noexcept {
         return count;
+    }
+
+    template <class TImage>
+    inline std::size_t image<TImage>::occupation() const noexcept {
+        return count * sizeof(TImage);
     }
 
     template <class TImage>
