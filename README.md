@@ -46,6 +46,7 @@ Template parameter's meaning is:
 |:--:|:--:|:--:|
 |size()|Return size||
 |empty()|Test whether image is empty||
+|occupation()|Return occupied bytes count||
 
 ### Element access
 |name|explanation|version|
