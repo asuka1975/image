@@ -1,5 +1,5 @@
-#ifndef INCLUDE_IMAGE_H
-#define INCLUDE_IMAGE_H
+#ifndef ASLIB_IMAGE_H
+#define ASLIB_IMAGE_H
 
 #include <cstddef>
 #include <cstdint>
