@@ -33,7 +33,7 @@ Template parameter's meaning is:
 ### Construction / Destruction
 |name|explanation|version|
 |:--:|:--:|:--:|
-|(constructor)|construct image|C++11|
+|(constructor)|construct image|C++17|
 
 ### Iterator
 |name|explanation|version|
@@ -47,6 +47,7 @@ Template parameter's meaning is:
 |size()|Return size||
 |empty()|Test whether image is empty||
 |occupation()|Return occupied bytes count||
+|start()|Return a position where occupation starts in memory||
 
 ### Element access
 |name|explanation|version|
