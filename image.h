@@ -298,6 +298,109 @@ namespace aslib {
             }
         }
     }
+
+    template <class TImage>
+    class image<const TImage> {
+    public:
+        using const_iterator = const TImage*;
+        using const_reference = const TImage&;
+    public:
+        image(const std::vector<std::byte>& mem, std::uint32_t start, std::uint32_t length);
+        ~image();
+        bool empty() const noexcept;
+        std::size_t size() const noexcept;
+        std::size_t occupation() const noexcept;
+        std::uint32_t start() const noexcept;
+        const_iterator begin() const noexcept;
+        const_iterator end() const noexcept;
+        const_reference operator[](std::size_t i) const;
+        const_reference at(std::size_t i) const;
+
+        image(const image<const TImage>& obj) = delete;
+        image(image<const TImage>&& obj) = delete;
+        image<const TImage>& operator=(const image<const TImage>& obj) = delete;        
+        image<const TImage>* operator&() = delete;
+        static void* operator new(size_t size) = delete;
+        static void operator delete(void *ptr) = delete;
+        static void* operator new[](size_t size) = delete;
+        static void operator delete[](void *ptr) = delete;
+        static void* operator new(std::size_t size, const std::nothrow_t&) noexcept = delete;
+        static void* operator new[](std::size_t size, const std::nothrow_t&) noexcept = delete;
+        static void* operator new(std::size_t, void*) = delete;
+        static void* operator new[](std::size_t size, void* ptr) noexcept = delete;
+    private:
+        const std::vector<std::byte>& memory;
+        std::uint32_t count;
+        std::uintptr_t id;
+    private:
+        bool _M_range_check(std::size_t i) const;
+    };
+
+    template <class TImage>
+    inline image<const TImage>::image(const std::vector<std::byte>& mem, std::uint32_t start, std::uint32_t count) :
+        memory(mem),
+        count(count),
+        id(image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&mem)].size() ? (image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&mem)].rbegin()->first + 1) : 0)
+    {
+        static_assert(std::is_trivially_copyable<TImage>::value == true, "TImage is not trivially copyable");
+        
+        image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&mem)][id] = start;
+    }
+
+    template <class TImage>
+    inline image<const TImage>::~image() {
+        image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&memory)].erase(id);
+    }
+
+    template <class TImage>
+    inline bool image<const TImage>::empty() const noexcept {
+        return !count;
+    }
+
+    template <class TImage>
+    inline std::size_t image<const TImage>::size() const noexcept {
+        return count;
+    }
+
+    template <class TImage>
+    inline std::size_t image<const TImage>::occupation() const noexcept {
+        return count * sizeof(TImage);
+    }
+
+    template <class TImage>
+    inline std::uint32_t image<const TImage>::start() const noexcept {
+        return image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&memory)][id];
+    }
+
+    template <class TImage>
+    inline typename image<const TImage>::const_iterator image<const TImage>::begin() const noexcept {
+        return reinterpret_cast<const TImage*>(memory.data() + start());
+    }
+
+    template <class TImage>
+    inline typename image<const TImage>::const_iterator image<const TImage>::end() const noexcept {
+        return reinterpret_cast<const TImage*>(memory.data() + start() + count * sizeof(TImage));
+    }
+
+    template <class TImage>
+    inline typename image<const TImage>::const_reference image<const TImage>::operator[](std::size_t i) const {
+        return *reinterpret_cast<const TImage*>(memory.data() + start() + i * sizeof(TImage));
+    }
+
+    template <class TImage>
+    inline typename image<const TImage>::const_reference image<const TImage>::at(std::size_t i) const {
+        if(i >= count) {
+            std::ostringstream oss;
+            oss << "image::_M_range_check: i (which is " << i << ") >= this->size() (which is " << size() << ")";
+            throw std::out_of_range(oss.str());
+        }
+        return operator[](i);
+    }
+
+    template <class TImage>
+    inline bool image<const TImage>::_M_range_check(std::size_t i) const {
+        return i < size();
+    }
 }
 
 
