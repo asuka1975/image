@@ -27,7 +27,7 @@ namespace aslib {
     template <class TImage> class image;
 
     class image_shared_state {
-        static inline std::map<std::uintptr_t, std::map<std::uintptr_t, std::uint32_t>> access_info;
+        static inline std::map<std::uintptr_t, std::map<std::size_t, std::pair<std::uint32_t, std::size_t>>> access_info;
         template <class TImage> 
         friend class image;
     };
@@ -81,7 +81,7 @@ namespace aslib {
     private:
         std::vector<std::byte>& memory;
         std::uint32_t count;
-        std::uintptr_t id;
+        std::size_t id;
     private:
         bool _M_range_check(std::size_t i) const;
         void _M_change_count(std::int32_t d);
@@ -96,7 +96,12 @@ namespace aslib {
     {
         static_assert(std::is_trivially_copyable<TImage>::value == true, "TImage is not trivially copyable");
         
-        image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&mem)][id] = start;
+        std::size_t align = alignof(TImage);
+        std::uintptr_t address = reinterpret_cast<std::uintptr_t>(mem.data() + start);
+        std::uintptr_t move = (address % align) ? (align - address % align) : 0;
+        if(move) mem.insert(mem.begin() + start, move, std::byte(0));
+        start += move;
+        image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&mem)][id] = std::make_pair(start, align);
         if(start + count * sizeof(TImage) > memory.size()) memory.resize(start + count * sizeof(TImage));
     }
 
@@ -122,7 +127,7 @@ namespace aslib {
 
     template <class TImage>
     inline std::uint32_t image<TImage>::start() const noexcept {
-        return image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&memory)][id];
+        return image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&memory)][id].first;
     }
 
     template <class TImage>
@@ -292,9 +297,17 @@ namespace aslib {
     inline void image<TImage>::_M_change_count(std::int32_t d) {
         count += d;
         auto& access = image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&memory)];
-        for(auto[k, v] : access) {
-            if(v >= start() && k != id) {
-                access[k] += d * sizeof(TImage);
+        std::size_t align = alignof(TImage);
+        std::uintptr_t move = d * sizeof(TImage);
+        std::vector<std::pair<std::size_t, std::pair<std::uint32_t, std::size_t>>> elems;
+        elems.insert(elems.begin(), access.begin(), access.end());
+        std::sort(elems.begin(), elems.end(), [](auto&& a, auto&& b) { return a.second.first < b.second.first; });
+        for(auto[k, v] : elems) {
+            if(v.first >= start() && k != id) {
+                access[k].first += move;
+                std::uintptr_t align_count = (access[k].first % access[k].second) ? (align - access[k].first % access[k].second) : 0;
+                access[k].first += align_count;
+                move += align_count;
             }
         }
     }
@@ -331,7 +344,7 @@ namespace aslib {
     private:
         const std::vector<std::byte>& memory;
         std::uint32_t count;
-        std::uintptr_t id;
+        std::size_t id;
     private:
         bool _M_range_check(std::size_t i) const;
     };
@@ -343,8 +356,12 @@ namespace aslib {
         id(image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&mem)].size() ? (image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&mem)].rbegin()->first + 1) : 0)
     {
         static_assert(std::is_trivially_copyable<TImage>::value == true, "TImage is not trivially copyable");
-        
-        image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&mem)][id] = start;
+
+        std::size_t align = alignof(TImage);
+        std::uintptr_t address = reinterpret_cast<std::uintptr_t>(mem.data() + start);
+        std::uintptr_t move = (address % align) ? (align - address % align) : 0;
+        start += move;
+        image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&mem)][id] = std::make_pair(start, align);
     }
 
     template <class TImage>
@@ -369,7 +386,7 @@ namespace aslib {
 
     template <class TImage>
     inline std::uint32_t image<const TImage>::start() const noexcept {
-        return image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&memory)][id];
+        return image_shared_state::access_info[reinterpret_cast<std::uintptr_t>(&memory)][id].first;
     }
 
     template <class TImage>

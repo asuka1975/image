@@ -83,7 +83,7 @@ This class contains reference of an object so you must avoid life extension of i
 
 ## Example
 
-### Basic usage(C++14)
+### Basic usage(C++17)
 
 ```c++
 #include <cstdint>
@@ -115,7 +115,7 @@ int main(void) {
     }
 
     std::cout << "reinterpret" << std::endl;
-    object* o = reinterpret_cast<object*>(v.data() + 2);
+    object* o = reinterpret_cast<object*>(v.data() + im.start());
     for(auto i = 0; i < im.size(); i++) {
         std::cout << o[i].id << " " << o[i].value << std::endl;
     }
