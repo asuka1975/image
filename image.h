@@ -27,12 +27,10 @@ namespace aslib {
     template <class TImage> class image;
 
     class image_shared_state {
-        static std::map<std::uintptr_t, std::map<std::uintptr_t, std::uint32_t>> access_info;
+        static inline std::map<std::uintptr_t, std::map<std::uintptr_t, std::uint32_t>> access_info;
         template <class TImage> 
         friend class image;
     };
-
-    std::map<std::uintptr_t, std::map<std::uintptr_t, std::uint32_t>> image_shared_state::access_info;
 
     template <class TImage>
     class image {
